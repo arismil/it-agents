@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IT Helpdesk Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 2rem;
+            background: #f5f7fb;
+        }
+
+        .card {
+            max-width: 720px;
+            margin: auto;
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, .08);
+        }
+
+        input,
+        textarea,
+        select,
+        button {
+            width: 100%;
+            margin-top: .5rem;
+            margin-bottom: 1rem;
+            padding: .75rem;
+            border-radius: 6px;
+            border: 1px solid #ccd3e1;
+        }
+
+        button {
+            cursor: pointer;
+            background: #2563eb;
+            color: white;
+            border: none;
+        }
+
+        pre {
+            background: #0f172a;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <h1>IT Helpdesk Demo</h1>
+        <form id="ticket-form">
+            <label>Title</label>
+            <input id="title" name="title" value="VPN login failure" />
+
+            <label>Description</label>
+            <textarea id="description" name="description"
+                rows="4">User cannot connect to VPN after password reset.</textarea>
+
+            <label>Severity</label>
+            <select id="severity" name="severity">
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high" selected>High</option>
+                <option value="critical">Critical</option>
+            </select>
+
+            <label>Contact</label>
+            <input id="contact" name="contact" value="alex@example.com" />
+
+            <button type="submit">Submit ticket</button>
+        </form>
+
+        <pre id="result">Response will appear here.</pre>
+    </div>
+
+    <script>
+        const form = document.getElementById('ticket-form');
+        const result = document.getElementById('result');
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const payload = {
+                title: document.getElementById('title').value,
+                description: document.getElementById('description').value,
+                severity: document.getElementById('severity').value,
+                contact: document.getElementById('contact').value,
+            };
+
+            const response = await fetch('/tickets/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+            result.textContent = JSON.stringify(data, null, 2);
+        });
+    </script>
+</body>
+
+</html>
