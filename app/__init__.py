@@ -1,1 +1,0 @@
-"""IT agents application package."""

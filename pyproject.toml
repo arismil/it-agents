@@ -1,0 +1,28 @@
+[project]
+name = "it-agents"
+version = "0.1.0"
+description = "Observable AI-powered IT incident resolution agent"
+readme = "README.md"
+authors = [
+    { name = "Aris Miletis", email = "arismiletis@outlook.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "fastapi>=0.115.0",
+    "langfuse>=3.0.0",
+    "langgraph>=0.6.0",
+    "pydantic>=2.9.0",
+    "uvicorn[standard]>=0.30.0",
+]
+
+[project.scripts]
+it-agents = "it_agents.api:run"
+
+[build-system]
+requires = ["uv_build>=0.12.7,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
