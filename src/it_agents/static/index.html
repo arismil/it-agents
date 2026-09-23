@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NFS Vendor Risk Agent</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #ffffff; --ink: #1c2330; --muted: #5d6778; --line: #dfe3ea;
+    --accent: #1f4f8f; --ok: #1e7b4a; --warn: #a86400; --bad: #b3261e; --chip: #eef1f6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #11151c; --panel: #181e27; --ink: #e5e9f0; --muted: #98a2b3; --line: #2a3240;
+            --accent: #7fb0f0; --ok: #5cc98d; --warn: #f0b252; --bad: #f2837b; --chip: #222a36; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--bg); color: var(--ink); }
+  header { padding: 14px 20px; border-bottom: 1px solid var(--line); background: var(--panel); display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+  header h1 { font-size: 17px; margin: 0; }
+  header span { color: var(--muted); font-size: 13px; }
+  main { display: grid; grid-template-columns: 340px 1fr; gap: 16px; padding: 16px; max-width: 1400px; margin: 0 auto; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; margin-bottom: 16px; }
+  h2 { font-size: 14px; margin: 0 0 10px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+  h3 { font-size: 15px; margin: 18px 0 8px; }
+  label { display: block; font-size: 12px; color: var(--muted); margin: 8px 0 3px; }
+  input, select, textarea { width: 100%; padding: 7px 9px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); font: inherit; }
+  textarea { min-height: 70px; resize: vertical; }
+  button { font: inherit; padding: 7px 12px; border-radius: 6px; border: 1px solid var(--accent); background: var(--accent); color: #fff; cursor: pointer; }
+  button.ghost { background: transparent; color: var(--accent); }
+  button:disabled { opacity: .5; cursor: default; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .samples button { font-size: 12px; padding: 4px 8px; }
+  .list div { padding: 7px 8px; border-radius: 6px; cursor: pointer; display: flex; justify-content: space-between; gap: 8px; }
+  .list div:hover, .list div.sel { background: var(--chip); }
+  .badge { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; background: var(--chip); white-space: nowrap; }
+  .Approve, .Low, .approved, .EVIDENCE { color: var(--ok); }
+  .Conditional, .Moderate, .High, .INFERENCE, .pending_human_review, .pending { color: var(--warn); }
+  .Reject, .Critical, .MISSING, .blocked, .failed { color: var(--bad); }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 10px 0; }
+  .kpi { border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+  .kpi b { display: block; font-size: 20px; }
+  .kpi small { color: var(--muted); }
+  .finding { border-left: 3px solid var(--line); padding: 4px 0 4px 10px; margin: 8px 0; }
+  .finding.veto { border-color: var(--bad); }
+  .cite { font-size: 12px; color: var(--muted); margin-left: 8px; }
+  .cite code { font-size: 11px; }
+  .bad { color: var(--bad); } .ok { color: var(--ok); }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  td, th { text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .tabs button { background: transparent; color: var(--muted); border: none; border-bottom: 2px solid transparent; border-radius: 0; }
+  .tabs button.on { color: var(--ink); border-bottom-color: var(--accent); }
+  .hitl { border: 2px solid var(--warn); }
+  .muted { color: var(--muted); }
+  ul { margin: 4px 0; padding-left: 20px; }
+  .spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Northstar Financial Services · Vendor Risk Deep Agent</h1>
+  <span>Orchestrator + 4 specialist agents · RAG · MCP · guardrails · human-in-the-loop</span>
+</header>
+<main>
+  <aside>
+    <div class="panel">
+      <h2>New assessment</h2>
+      <div class="row samples" id="samples"></div>
+      <label>Vendor</label><input id="vendor" value="Asteria AI Systems">
+      <label>Use case</label><textarea id="use_case">GenAI processing of confidential documents (contracts, internal audit reports) for NFS risk and compliance analysts.</textarea>
+      <div class="row">
+        <div style="flex:1"><label>Data classification</label>
+          <select id="cls"><option>Public</option><option>Internal</option><option selected>Confidential</option><option>Highly Confidential</option></select></div>
+        <div style="flex:1"><label>Annual spend (USD)</label><input id="spend" type="number" placeholder="optional"></div>
+      </div>
+      <label><input type="checkbox" id="pii" style="width:auto"> Handles customer PII</label>
+      <label>Simulate failures (comma separated, test only)</label><input id="fail" placeholder="e.g. get_financial_risk_intel, ai_governance">
+      <div class="row" style="margin-top:10px"><button id="go">Run assessment</button><span id="msg" class="muted"></span></div>
+    </div>
+    <div class="panel"><h2>Assessments</h2><div class="list" id="list"></div></div>
+  </aside>
+  <section>
+    <div class="row tabs" style="margin-bottom:8px">
+      <button data-tab="report" class="on">Report</button><button data-tab="trace">Trace</button><button data-tab="evals">Evaluation</button>
+    </div>
+    <div id="view" class="panel"><p class="muted">Select or run an assessment.</p></div>
+  </section>
+</main>
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let current = null, tab = 'report', poll = null;
+const BADGE = {retrieved_evidence: 'EVIDENCE', ai_inference: 'INFERENCE', missing_evidence: 'MISSING'};
+
+async function api(path, opts = {}) {
+  const r = await fetch(path, {headers: {'Content-Type': 'application/json'}, ...opts});
+  const body = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(body.detail ? JSON.stringify(body.detail) : r.statusText);
+  return body;
+}
+
+async function loadSamples() {
+  const s = await api('/api/samples');
+  $('#samples').innerHTML = s.map((x, i) => `<button class="ghost" data-i="${i}">${esc(x.label)}</button>`).join('');
+  $('#samples').onclick = e => {
+    const x = s[e.target.dataset.i]?.request; if (!x) return;
+    $('#vendor').value = x.vendor_name; $('#use_case').value = x.use_case; $('#cls').value = x.data_classification;
+    $('#spend').value = x.annual_spend_usd ?? ''; $('#fail').value = (x.simulate_failures || []).join(', ');
+  };
+}
+
+async function loadList() {
+  const items = await api('/api/assessments');
+  $('#list').innerHTML = items.map(a => `<div data-id="${a.assessment_id}" class="${a.assessment_id === current ? 'sel' : ''}">
+    <span>${esc(a.vendor || a.assessment_id)}<br><small class="muted">${esc(a.assessment_id)}</small></span>
+    <span>${a.status === 'running' ? '<span class="spinner"></span>' : `<span class="badge ${a.recommendation}">${esc(a.recommendation || '')}</span><br><small class="${a.status}">${esc(a.status)}</small>`}</span></div>`).join('') || '<p class="muted">None yet.</p>';
+}
+$('#list').onclick = e => { const d = e.target.closest('[data-id]'); if (d) select(d.dataset.id); };
+
+$('#go').onclick = async () => {
+  const body = {vendor_name: $('#vendor').value, use_case: $('#use_case').value, data_classification: $('#cls').value,
+    handles_customer_pii: $('#pii').checked, annual_spend_usd: $('#spend').value ? +$('#spend').value : null,
+    simulate_failures: $('#fail').value.split(',').map(s => s.trim()).filter(Boolean)};
+  try { const r = await api('/api/assessments', {method: 'POST', body: JSON.stringify(body)});
+        $('#msg').textContent = 'Started ' + r.assessment_id; select(r.assessment_id); }
+  catch (err) { $('#msg').textContent = 'Error: ' + err.message; }
+};
+
+document.querySelector('.tabs').onclick = e => {
+  if (!e.target.dataset.tab) return; tab = e.target.dataset.tab;
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b === e.target)); render();
+};
+
+async function select(id) { current = id; clearInterval(poll); await render(); loadList(); }
+
+async function render() {
+  if (tab === 'evals') return renderEvals();
+  if (!current) return;
+  if (tab === 'trace') return renderTrace();
+  const r = await api('/api/assessments/' + current).catch(e => ({status: 'error: ' + e.message}));
+  if (r.status === 'running' || String(r.status).startsWith('error')) {
+    $('#view').innerHTML = r.status === 'running'
+      ? `<p><span class="spinner"></span> Assessment <code>${current}</code> running: orchestrator planning, specialists gathering evidence via MCP… (typically 1–4 min)</p>`
+      : `<p class="bad">${esc(r.status)}</p>`;
+    if (r.status === 'running') { clearInterval(poll); poll = setInterval(async () => {
+      const s = await api('/api/assessments/' + current).catch(() => ({})); if (s.status !== 'running') { clearInterval(poll); render(); loadList(); } }, 4000); }
+    return;
+  }
+  $('#view').innerHTML = reportHtml(r);
+  const f = $('#hitl-form'); if (f) f.onsubmit = submitReview;
+}
+
+function reportHtml(r) {
+  if (r.status === 'blocked') return `<h3>Request blocked by input guardrails</h3>
+    <ul>${r.guardrail_events.map(e => `<li><b>${esc(e.type)}</b>: ${esc(e.detail)}</li>`).join('')}</ul>`;
+  const hr = r.human_review, cites = r.citations, valid = cites.filter(c => c.valid).length;
+  const kpi = (v, l, c = '') => `<div class="kpi"><b class="${c}">${esc(v)}</b><small>${l}</small></div>`;
+  let h = `<div class="row" style="justify-content:space-between"><h3 style="margin:0">${esc(r.request.vendor_name)} <small class="muted">· ${esc(r.vendor_tier)}</small></h3>
+    <span><a href="/api/assessments/${r.assessment_id}/markdown" target="_blank">Markdown</a></span></div>
+    <div class="kpis">${kpi(r.recommendation, 'AI recommendation', r.recommendation)}${kpi(r.risk_rating + ' · ' + r.risk_score, 'Risk rating · VRS/100', r.risk_rating)}
+    ${kpi(valid + '/' + cites.length, 'Citations verified')}${kpi(r.missing_evidence.length, 'Missing evidence items')}
+    ${kpi(hr.status + (hr.final_recommendation ? ' → ' + hr.final_recommendation : ''), 'Human review', hr.status)}</div>`;
+  if (hr.status === 'pending') h += `<div class="panel hitl"><h2>Human review required</h2><ul>${hr.reasons.map(x => `<li>${esc(x)}</li>`).join('')}</ul>
+    <form id="hitl-form" class="row"><input name="reviewer" placeholder="Reviewer name" required style="flex:1;min-width:140px">
+    <select name="decision" style="width:auto"><option value="accept">Accept AI recommendation</option><option value="override">Override</option><option value="return_for_rework">Return for rework</option></select>
+    <select name="final" style="width:auto"><option value="">(override to…)</option><option>Approve</option><option>Conditional</option><option>Reject</option></select>
+    <input name="comments" placeholder="Comments" style="flex:2;min-width:160px"><button>Submit decision</button></form></div>`;
+  else if (hr.reviewer) h += `<p><b>Human decision:</b> <span class="${hr.status}">${esc(hr.status)}</span> by ${esc(hr.reviewer)} → <b>${esc(hr.final_recommendation || 'n/a')}</b> ${hr.comments ? '· ' + esc(hr.comments) : ''}</p>`;
+  h += `<p>${esc(r.executive_summary)}</p><p class="muted"><b>Rationale:</b> ${esc(r.rationale)}</p>`;
+  if (r.policy_violations.length) h += `<h3>Policy violations / veto triggers</h3><ul>${r.policy_violations.map(v => `<li class="bad">${esc(v)}</li>`).join('')}</ul>`;
+  h += `<h3>Domain findings</h3>`;
+  for (const d of r.domain_findings) {
+    h += `<details open><summary><b>${esc(d.domain.replace('_', ' '))}</b> · domain risk ${d.risk_score}/100</summary><p class="muted">${esc(d.summary)}</p>`;
+    for (const f of d.findings) {
+      const b = BADGE[f.evidence_type];
+      h += `<div class="finding ${f.veto_trigger ? 'veto' : ''}"><span class="badge ${b}">${b}</span> <span class="badge">${esc(f.severity)}</span>
+        ${f.veto_trigger ? '<span class="badge bad">VETO</span>' : ''} <b>${esc(f.title)}</b> <small class="muted">${esc(f.requirement_id)} · ${esc(f.compliance_status)} · ${esc(f.policy_reference)}</small>
+        <div>${esc(f.detail)}</div>${f.citations.map(c => {
+          const chk = cites.find(x => x.source_id === c.source_id && x.quote === c.quote);
+          return `<div class="cite"><code>${esc(c.source_id)}</code> ${chk ? (chk.valid ? '<span class="ok">✓</span>' : `<span class="bad">✗ ${esc(chk.reason)}</span>`) : ''} “${esc(c.quote)}”</div>`; }).join('')}</div>`;
+    }
+    h += `</details>`;
+  }
+  for (const d of r.incomplete_domains) h += `<p class="bad"><b>${esc(d)}</b>: domain incomplete (specialist unavailable)</p>`;
+  const list = (t, xs, f = x => esc(x)) => xs.length ? `<h3>${t}</h3><ul>${xs.map(x => `<li>${f(x)}</li>`).join('')}</ul>` : '';
+  h += list('Contradictions', r.cross_domain_contradictions);
+  h += list('Missing evidence', r.missing_evidence, m => `<span class="muted">${esc(m.domain)}</span> · ${esc(m.item)}`);
+  h += list('Required remediation', r.required_remediation);
+  h += list('Guardrail events', r.guardrail_events, e => `<b>[${esc(e.stage)}] ${esc(e.type)}</b> (${esc(e.action)}): ${esc(e.detail)}`);
+  h += list('Deep-agent plan', r.plan_steps_completed);
+  h += `<h3>Citations</h3><table><tr><th>Source</th><th>Document</th><th>p.</th><th>Verified</th><th>Note</th></tr>${cites.map(c =>
+    `<tr><td><code>${esc(c.source_id)}</code></td><td>${esc(c.document || '-')}</td><td>${c.page ?? '-'}</td><td class="${c.valid ? 'ok' : 'bad'}">${c.valid ? 'yes' : 'no'}</td><td>${esc(c.reason)}</td></tr>`).join('')}</table>`;
+  return h;
+}
+
+async function submitReview(e) {
+  e.preventDefault(); const f = new FormData(e.target);
+  const body = {reviewer: f.get('reviewer'), decision: f.get('decision'), comments: f.get('comments') || null,
+                final_recommendation: f.get('final') || null};
+  try { await api(`/api/assessments/${current}/review`, {method: 'POST', body: JSON.stringify(body)}); render(); loadList(); }
+  catch (err) { alert(err.message); }
+}
+
+async function renderTrace() {
+  const t = await api(`/api/assessments/${current}/trace`).catch(() => null);
+  if (!t) { $('#view').innerHTML = '<p class="muted">No trace for this assessment.</p>'; return; }
+  const m = t.metrics;
+  $('#view').innerHTML = `<div class="kpis">${Object.entries(m).map(([k, v]) => `<div class="kpi"><b>${esc(v)}</b><small>${esc(k)}</small></div>`).join('')}</div>
+    <h3>Plan (write_todos)</h3><ul>${(t.todos || []).map(x => `<li>${esc(x.content)} <small class="muted">${esc(x.status)}</small></li>`).join('')}</ul>
+    <h3>Events</h3><table><tr><th>t (s)</th><th>kind</th><th>agent</th><th>tool</th><th>latency</th><th>detail</th></tr>${t.events.map(e =>
+    `<tr><td>${e.t}</td><td>${esc(e.kind)}</td><td>${esc(e.agent || '')}</td><td>${esc(e.tool || '')}</td><td>${e.latency_s ?? ''}</td>
+     <td class="${e.error ? 'bad' : ''}">${esc(e.kind === 'llm_call' ? `${e.input_tokens ?? ''} in / ${e.output_tokens ?? ''} out` : (e.error && e.error !== true ? e.error : (e.input || e.output_preview || (e.tools || []).join(', '))))}</td></tr>`).join('')}</table>`;
+}
+
+async function renderEvals() {
+  const s = await api('/api/evals/latest').catch(() => null);
+  if (!s) { $('#view').innerHTML = '<p class="muted">No evaluation run yet. Run <code>it-agents eval</code>.</p>'; return; }
+  $('#view').innerHTML = `<div class="kpis"><div class="kpi"><b>${s.passed}/${s.cases}</b><small>cases passed</small></div>
+    <div class="kpi"><b>${s.avg_citation_validity ?? '-'}</b><small>avg citation validity</small></div>
+    <div class="kpi"><b>${s.avg_grounding_rate ?? '-'}</b><small>avg grounding rate</small></div>
+    <div class="kpi"><b>${s.avg_detection_recall ?? '-'}</b><small>avg detection recall</small></div>
+    <div class="kpi"><b>${s.avg_missing_evidence_recall ?? '-'}</b><small>avg missing-evidence recall</small></div>
+    <div class="kpi"><b>${s.avg_latency_s ?? '-'}</b><small>avg latency (s)</small></div></div>
+    <p class="muted">Run at ${esc(s.run_at)}</p><table><tr><th>Case</th><th>Result</th><th>Recommendation</th><th>Checks</th></tr>${s.results.map(r =>
+    `<tr><td>${esc(r.id)}</td><td class="${r.passed ? 'ok' : 'bad'}">${r.passed ? 'PASS' : 'FAIL'}</td><td>${esc(r.recommendation || r.status || '')}</td>
+     <td>${Object.entries(r.checks).map(([k, v]) => `<span class="${v ? 'ok' : 'bad'}">${v ? '✓' : '✗'} ${esc(k)}</span>`).join(' · ')}</td></tr>`).join('')}</table>`;
+}
+
+loadSamples(); loadList(); setInterval(loadList, 10000);
+</script>
+</body>
+</html>

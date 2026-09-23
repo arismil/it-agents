@@ -1,0 +1,40 @@
+[project]
+name = "it-agents"
+version = "0.1.0"
+description = "NFS vendor risk assessment deep agent (hackathon PoC)"
+readme = "README.md"
+authors = [
+    { name = "Aris Miletis", email = "arismiletis@outlook.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "chroma>=0.2.0",
+    "chromadb>=1.5.9",
+    "deepagents>=0.7.18",
+    "fastapi>=0.115.0",
+    "langchain>=1.4.2",
+    "langchain-chroma>=1.1.0",
+    "langchain-mcp-adapters>=0.3.2",
+    "langchain-openai>=1.6.2",
+    "langchain-text-splitters>=1.1.2",
+    "langfuse>=4.15.4",
+    "mcp>=1.20",
+    "pgvector>=0.5.0",
+    "pypdf>=6.19.0",
+    "python-dotenv>=1.2.3",
+    "requests>=2.34.2",
+    "uvicorn[standard]>=0.30.0",
+]
+
+[project.scripts]
+it-agents = "it_agents:main"
+
+[build-system]
+requires = ["uv_build>=0.12.7,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.1.1",
+]
